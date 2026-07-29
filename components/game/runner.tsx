@@ -285,6 +285,16 @@ export const Runner = () => {
       if (!visible || (event.code !== "Space" && event.code !== "ArrowUp")) {
         return;
       }
+      // Ignore keys typed into the chat (or any editable element) — the game
+      // only owns Space/ArrowUp when the user isn't writing text.
+      const target = event.target as HTMLElement | null;
+      if (
+        target &&
+        (target.isContentEditable ||
+          /^(INPUT|TEXTAREA|SELECT)$/.test(target.tagName))
+      ) {
+        return;
+      }
       event.preventDefault();
       act();
     };

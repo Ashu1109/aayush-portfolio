@@ -1,4 +1,5 @@
 import { TooltipProvider } from "@/components/ui/tooltip";
+import { Analytics } from "@vercel/analytics/next";
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { Toaster } from "sonner";
@@ -35,6 +36,7 @@ export default function RootLayout({
         <TooltipProvider>{children}</TooltipProvider>
         <Toaster theme="dark" />
         <div aria-hidden className="grain" />
+        <Analytics />
       </body>
     </html>
   );

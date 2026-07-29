@@ -136,6 +136,14 @@ Two engineers build the platform; Aayush owns everything in the logline.ai monor
 ## LoglineAI Studio (internal tool Aayush built)
 A separate internal AI media studio Aayush built end to end at Logline: a single web surface where the team generates images and videos across 200+ state-of-the-art models. It has project-membership gating, per-model budgets and user balances, quotas, and full usage/billing attribution, plus an admin console and gallery. Its standout feature is a built-in remote MCP server (OAuth via Clerk with Dynamic Client Registration) that lets Claude clients - claude.ai connectors, Claude Code, Claude Desktop - drive generations as the signed-in user with the exact same permissions, jobs, and billing as the web app. It also sends WhatsApp spend alerts when generation costs spike. There is no public link; it is internal to Logline.
 
+## Cinema Studio and motion-capture enhancement (Aayush's technical work)
+Inside LoglineAI Studio, Aayush built a Cinema Studio for video-to-video generation (motion capture, green-screen compositing, and performance transfer) and engineered the prompt-enhancement pipeline that makes the output directable:
+- Designed the generation modes around locked invariants: the pipeline pins what must not change (performance, audio, camera) so the model only alters what the user asked for - this is what keeps motion-capture output consistent instead of drifting.
+- Built a server-side LLM prompt enhancer that restructures raw user prompts into strict per-mode production-brief templates, with attached assets bound by exact labels so each reference lands in the right slot.
+- Handled enhancer refusals as structured responses with graceful fallback to the raw prompt, so a declined restructure never fails the generation job.
+- Added cinematic camera direction (body, lens, focal length, aperture) as a sanitized, length-capped block woven into the brief server-side - camera input can never inject into the template - with savable camera presets.
+- Kept generation API keys server-only, and inspected + downscaled media client-side before upload to stay within model input limits.
+
 ## The v1 to v2 rebuild (2026)
 Aayush co-led rebuilding the entire platform from v1 to v2 - the async backbone moved from Kafka/Redpanda + transactional outbox to Temporal Cloud workflows with Redis pub/sub for realtime; the pipeline grew from 10 Claude agents to 14 multi-provider agents; five per-type asset families were unified into one schema; deployment moved from EC2 + SSH restarts to Terraform-managed ECS with rolling deploys; and v2 added Studio batch generation, voice casting, and scene-video loops.
 - Live platform: ${"https://v2.logline.ai"}

@@ -63,10 +63,10 @@ export const EXPERIENCE: Experience[] = [
 
 export const SKILLS = [
   { group: "Languages", items: ["Python", "TypeScript", "JavaScript", "C/C++"] },
-  { group: "Web & Backend", items: ["Next.js", "Node.js", "Express.js", "Prisma", "Redis", "Apache Kafka", "Redpanda"] },
+  { group: "Web & Backend", items: ["Next.js", "Node.js", "Express.js", "Prisma", "Temporal", "Redis", "Apache Kafka", "Redpanda", "SSE"] },
   { group: "AI / ML", items: ["Generative AI", "RAG pipelines", "LangChain", "Crew AI", "Google ADK"] },
   { group: "Databases", items: ["PostgreSQL", "MySQL", "MongoDB"] },
-  { group: "DevOps", items: ["Docker", "AWS (EC2, ECR, ECS, S3, SQS, RDS)", "Nginx", "Terraform", "GitHub Actions"] },
+  { group: "DevOps", items: ["Docker", "AWS (EC2, ECR, ECS, S3, SQS, RDS)", "Nginx", "Terraform", "GitHub Actions", "OpenTelemetry", "SigNoz"] },
 ] as const;
 
 export const EDUCATION = {

@@ -15,10 +15,25 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
+const TITLE = "Aayush Kumar · Full Stack AI Engineer";
+const DESCRIPTION =
+  "Full-stack AI engineer on Logline AI's founding team. Event-driven platforms, multi-agent systems, and an AI assistant that answers questions about my work.";
+
 export const metadata: Metadata = {
-  title: "Aayush Kumar · Full Stack AI Engineer",
-  description:
-    "Full-stack AI engineer on Logline AI's founding team. Event-driven platforms, multi-agent systems, and an AI assistant that answers questions about my work.",
+  title: TITLE,
+  description: DESCRIPTION,
+  metadataBase: new URL("https://aayush-portfolio-flax.vercel.app"),
+  openGraph: {
+    title: TITLE,
+    description: DESCRIPTION,
+    type: "website",
+    url: "/",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: TITLE,
+    description: DESCRIPTION,
+  },
 };
 
 export default function RootLayout({

@@ -12,6 +12,11 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Vendored registry code (shadcn / ai-elements / canvasui) — regenerated
+    // by their CLIs, so lint fixes here get overwritten on the next update.
+    "components/ui/**",
+    "components/ai-elements/**",
+    "components/canvasui/**",
   ]),
 ]);
 

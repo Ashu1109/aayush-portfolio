@@ -73,8 +73,8 @@ const MessageParts = ({ message }: { message: UIMessage }) => (
 );
 
 const EmptyState = ({ onPick }: { onPick: (text: string) => void }) => (
-  <div className="flex h-full flex-col items-center justify-center gap-8 px-6 py-10 text-center">
-    <div>
+  <div className="flex min-h-full flex-col items-center gap-8 px-6 py-10 text-center">
+    <div className="mt-auto">
       <SparklesIcon className="mx-auto size-7 text-amber-400" />
       <h3 className="mt-4 text-xl font-semibold tracking-tight text-zinc-100">
         Ask anything about my work
@@ -83,7 +83,7 @@ const EmptyState = ({ onPick }: { onPick: (text: string) => void }) => (
         It knows my resume inside out and answers in seconds.
       </p>
     </div>
-    <div className="grid w-full max-w-lg gap-2 sm:grid-cols-2">
+    <div className="mb-auto grid w-full max-w-lg gap-2 sm:grid-cols-2">
       {SUGGESTIONS.map((suggestion) => (
         <button
           className="rounded-xl border border-zinc-800 bg-zinc-900/40 px-4 py-3 text-left text-sm text-zinc-300 transition-colors hover:border-amber-400/50 hover:text-amber-200 active:scale-[0.99]"
@@ -171,7 +171,7 @@ export const Chat = () => {
         </button>
       </div>
 
-      <div className="relative min-h-0 flex-1">
+      <div className="relative min-h-0 flex-1 overflow-y-auto">
         {messages.length === 0 ? (
           <EmptyState onPick={(suggestion) => sendMessage({ text: suggestion })} />
         ) : (

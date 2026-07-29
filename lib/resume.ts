@@ -89,6 +89,12 @@ export const LEADERSHIP = {
 export const PROJECTS = [
   {
     description:
+      "Internal AI media studio at Logline AI: one surface for image and video generation across 200+ models, with project-gated access, per-model budgets, quotas, and usage attribution. Ships a built-in MCP server (OAuth via Clerk) so Claude agents can drive generations with the exact same permissions and billing as the web app.",
+    name: "LoglineAI Studio",
+    stack: ["Next.js", "Clerk", "MCP", "PostgreSQL", "200+ gen models"],
+  },
+  {
+    description:
       "Secure code execution platform with a Redis-queued engine and sandboxed Docker workers, orchestrated via Docker Compose with shared Prisma migrations.",
     name: "LeetCode Clone",
     stack: ["Next.js", "Docker", "Redis", "Prisma"],
@@ -126,6 +132,9 @@ Two engineers build the platform; Aayush owns everything in the logline.ai monor
 - Infra/DevOps: AWS ECS/ECR/RDS/S3 via Terraform, CI/CD, Temporal Cloud + Redis wiring, OpenTelemetry + SigNoz observability, OpenMeter billing
 - Generation pipeline architecture, workflows, and the image-generation prompt engineering
 - Shared SSE event contracts package
+
+## LoglineAI Studio (internal tool Aayush built)
+A separate internal AI media studio Aayush built end to end at Logline: a single web surface where the team generates images and videos across 200+ state-of-the-art models. It has project-membership gating, per-model budgets and user balances, quotas, and full usage/billing attribution, plus an admin console and gallery. Its standout feature is a built-in remote MCP server (OAuth via Clerk with Dynamic Client Registration) that lets Claude clients - claude.ai connectors, Claude Code, Claude Desktop - drive generations as the signed-in user with the exact same permissions, jobs, and billing as the web app. It also sends WhatsApp spend alerts when generation costs spike. There is no public link; it is internal to Logline.
 
 ## The v1 to v2 rebuild (2026)
 Aayush co-led rebuilding the entire platform from v1 to v2 - the async backbone moved from Kafka/Redpanda + transactional outbox to Temporal Cloud workflows with Redis pub/sub for realtime; the pipeline grew from 10 Claude agents to 14 multi-provider agents; five per-type asset families were unified into one schema; deployment moved from EC2 + SSH restarts to Terraform-managed ECS with rolling deploys; and v2 added Studio batch generation, voice casting, and scene-video loops.

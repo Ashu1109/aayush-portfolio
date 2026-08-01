@@ -22,14 +22,14 @@ export type Experience = {
 
 export const EXPERIENCE: Experience[] = [
   {
-    company: "Logline AI",
+    company: "LoglineAI",
     highlights: [
       "Designed a resilient, event-driven microservices platform on Kafka and Redpanda that orchestrates a 14-agent Claude pipeline, resolving identity drift in long-form narratives.",
       "Engineered transactional outbox patterns for atomic consistency, SSE fan-out for real-time propagation, and schema optimization in PostgreSQL with Prisma.",
       "Owned the DevOps lifecycle: multi-tenant, model-agnostic routing on AWS ECS with Terraform, plus observability with OpenTelemetry and SigNoz.",
     ],
     period: "Feb 2026 - Present",
-    role: "Full Stack Engineer, AI (Founding Team)",
+    role: "Full Stack Engineer, AI",
     stack: ["Kafka", "Redpanda", "PostgreSQL", "Prisma", "AWS ECS", "Terraform", "OpenTelemetry"],
     summary:
       "Owns end-to-end architecture for a platform that keeps a 14-agent Claude pipeline coherent across long-form stories.",

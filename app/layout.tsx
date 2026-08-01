@@ -17,7 +17,7 @@ const geistMono = Geist_Mono({
 
 const TITLE = "Aayush Kumar · Full Stack AI Engineer";
 const DESCRIPTION =
-  "Full-stack AI engineer on Logline AI's founding team. Event-driven platforms, multi-agent systems, and an AI assistant that answers questions about my work.";
+  "Full-stack AI engineer at LoglineAI. Event-driven platforms, multi-agent systems, and an AI assistant that answers questions about my work.";
 
 export const metadata: Metadata = {
   title: TITLE,

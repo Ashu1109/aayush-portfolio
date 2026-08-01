@@ -95,8 +95,8 @@ export const Hero = () => {
             className="max-w-md text-lg leading-relaxed text-zinc-400"
             data-hero-fade
           >
-            Founding engineer at Logline AI. I build event-driven platforms
-            that keep multi-agent systems honest.
+            I build event-driven platforms that keep multi-agent systems
+            honest.
           </p>
           <div className="flex items-center gap-4" data-hero-fade>
             <a

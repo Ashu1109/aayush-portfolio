@@ -32,7 +32,7 @@ import { createPortal } from "react-dom";
 import { toast } from "sonner";
 
 const SUGGESTIONS = [
-  "What did Aayush build at Logline AI?",
+  "What did Aayush build at LoglineAI?",
   "Summarize his multi-agent infrastructure experience",
   "Which AWS services has he shipped with?",
   "Why should we interview him?",

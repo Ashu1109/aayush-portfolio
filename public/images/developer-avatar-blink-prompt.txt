@@ -1,0 +1,6 @@
+Use case: identity-preserve.
+Asset type: exactly aligned expression frame for an animated developer avatar.
+Input image: edit target, the original transparent avatar. Edit this source image in place; do not reinterpret, re-render, reposition, recrop, resize, rotate, or restyle it.
+Preserve EXACTLY the original 1254x1254 square canvas, framing, character identity, head size, eye centers, eye width, nose, hair, head tilt, body pose, ears, neck, shoulders, sweatshirt folds, skin texture, colors, shading, lighting, and character silhouette. Every pixel outside the specified tiny facial feature changes must remain visually identical. This is a single facial expression frame that will be composited over the source.
+Preserve the source's genuine alpha transparency: no background, checkerboard, white field, or added shadows. No text or logos.
+Change only the two eyes: close both eyes naturally in a gentle blink with relaxed closed eyelids. Keep both closed eyelid arcs exactly where the current eyes are, consistent with the source's head tilt. Preserve the relaxed closed-mouth smile and eyebrows exactly. No head, brow, mouth, or body motion. The only visible change is both eyes gently closed.

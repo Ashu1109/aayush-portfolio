@@ -39,3 +39,9 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# Portfolio export and local deployment metadata
+dist/
+.sites-runtime/
+.openai/
+!.env.example

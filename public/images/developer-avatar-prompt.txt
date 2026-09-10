@@ -1,0 +1,9 @@
+Use case: stylized-concept
+Asset type: transparent 3D character cutout for a polished developer portfolio website hero.
+Primary request: Create one original friendly young adult male developer avatar, medium-brown skin, short sculpted dark brown hair, no glasses, a confident warm smile, wearing a simple sky-blue / cornflower-blue sweatshirt (#4b8de0).
+Scene/backdrop: genuinely TRANSPARENT background with alpha channel. The entire area outside the character must be transparent, not white and not a checkerboard illustration.
+Style/medium: premium playful 3D clay/cartoon render, thoughtfully sculpted smooth forms, expressive friendly eyes, beautiful soft studio lighting, subtle realistic cloth texture, charming but mature.
+Composition/framing: square 1024x1024 canvas, centered front-view upper-body portrait from approximately waist upward, slight natural head tilt, both shoulders and upper arms fully visible, relaxed arms down, ample transparent margin around hair and shoulders; character occupies most of canvas and torso reaches bottom edge. The silhouette should work over a black semicircle on a white website.
+Lighting/mood: soft bright studio lighting, warm inviting face, gentle contact shadows within character only.
+Color palette: medium-brown skin, dark sculpted hair, sky-blue sweatshirt, no other saturated colors.
+Constraints: generic original illustration, not based on any real person's likeness. Exactly one character. No ground, no backdrop, no shadow beyond character, no props, no laptop, no accessories, no hands raised, no text, no logos, no watermark. Preserve clean antialiased transparent edges.

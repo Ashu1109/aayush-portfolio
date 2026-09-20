@@ -37,12 +37,12 @@ void main() {
   vec2 p = (vec2(vUv.x, 1.0 - vUv.y) - 0.5) * 1.08 + 0.5;
   float head = 1.0 - smoothstep(0.363, 0.455, p.y);
   vec2 pivot = vec2(0.501, 0.415);
-  float roll = uGaze.x * 0.033 + uCurious * 0.012;
+  float roll = uGaze.x * 0.05 + uCurious * 0.012;
   vec2 offset = p - pivot;
   float c = cos(roll), s = sin(roll);
   vec2 turned = mat2(c, -s, s, c) * offset + pivot;
-  turned.x -= uGaze.x * 0.010;
-  turned.y -= uGaze.y * 0.006 + uNod;
+  turned.x -= uGaze.x * 0.017;
+  turned.y -= uGaze.y * 0.010 + uNod;
   p = mix(p, turned, head);
   p.y -= uBreath * (1.0 - smoothstep(0.7, 1.0, p.y));
 
@@ -51,7 +51,7 @@ void main() {
   float eyes = max(ellipse(p, leftEye, vec2(0.032,0.021),0.68), ellipse(p, rightEye, vec2(0.032,0.021),0.68));
   float eyebrows = max(ellipse(p, vec2(0.417,0.174),vec2(0.049,0.025),0.8), ellipse(p,vec2(0.511,0.153),vec2(0.05,0.025),0.8));
   vec2 faceUv = p;
-  faceUv -= uGaze * vec2(0.0055,0.0035) * eyes * (1.0-uBlink) * (1.0-uHappy*0.6);
+  faceUv -= uGaze * vec2(0.010,0.006) * eyes * (1.0-uBlink) * (1.0-uHappy*0.6);
   faceUv.y += uCurious * eyebrows * 0.003;
   vec4 color = portrait(uPortrait, faceUv);
 
@@ -145,6 +145,9 @@ export default function InteractiveAvatar({ paused }: { paused: boolean }) {
       current.x += ((moving ? target.x : 0) - current.x) * (moving ? follow : 1);
       current.y += ((moving ? target.y : 0) - current.y) * (moving ? follow : 1);
       current.curious += ((curious && moving ? 1 : 0) - current.curious) * (moving ? follow : 1);
+      node!.style.setProperty('--avatar-look-x', `${current.x * 12}px`);
+      node!.style.setProperty('--avatar-look-y', `${current.y * 7}px`);
+      node!.style.setProperty('--avatar-look-tilt', `${current.x * 1.8}deg`);
       if (moving && hasBlink && now >= nextBlink) {
         blinkStarted = now;
         nextBlink = now + 3700 + Math.random() * 2400;
@@ -252,6 +255,9 @@ export default function InteractiveAvatar({ paused }: { paused: boolean }) {
       shaders.forEach(item => gl.deleteShader(item));
       if (buffer) gl.deleteBuffer(buffer);
       if (program) gl.deleteProgram(program);
+      node.style.removeProperty('--avatar-look-x');
+      node.style.removeProperty('--avatar-look-y');
+      node.style.removeProperty('--avatar-look-tilt');
       controller.current = null;
     };
   }, []);

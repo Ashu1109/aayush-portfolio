@@ -315,7 +315,7 @@ html:has(.portfolio[data-motion='paused']) { scroll-behavior: auto; }
 @media(prefers-reduced-motion:reduce) { html { scroll-behavior: auto; } *,*::before,*::after { animation: none !important; transition-duration: 0s !important; scroll-behavior: auto !important; } }
 
 /* One live portrait: a fixed torso, softly tracked head, gaze, and expression textures. */
-.interactive-avatar { background: transparent; padding: 0; border: 0; border-radius: 26px; cursor: pointer; overflow: visible; -webkit-tap-highlight-color: transparent; }
+.interactive-avatar { --avatar-look-x: 0px; --avatar-look-y: 0px; --avatar-look-tilt: 0deg; background: transparent; padding: 0; border: 0; border-radius: 26px; cursor: pointer; overflow: visible; -webkit-tap-highlight-color: transparent; transform: translateX(-50%) translate3d(var(--avatar-look-x),var(--avatar-look-y),0) rotate(var(--avatar-look-tilt)); transform-origin: 50% 82%; will-change: transform; }
 .avatar-fallback { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; pointer-events: none; }
 .avatar-canvas { position: absolute; left: -4%; top: -4%; width: 108%; height: 108%; pointer-events: none; opacity: 0; }
 .interactive-avatar[data-ready='true'] .avatar-fallback { opacity: 0; }

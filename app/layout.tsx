@@ -1,8 +1,7 @@
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { Analytics } from "@vercel/analytics/next";
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
-import { Toaster } from "sonner";
+import { Geist, Geist_Mono, Outfit } from "next/font/google";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -15,9 +14,15 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
+// Rounded geometric display face to match the sprite's soft silhouette.
+const outfit = Outfit({
+  variable: "--font-outfit",
+  subsets: ["latin"],
+});
+
 const TITLE = "Aayush Kumar · Full Stack AI Engineer";
 const DESCRIPTION =
-  "Full-stack AI engineer at LoglineAI. Event-driven platforms, multi-agent systems, and an AI assistant that answers questions about my work.";
+  "Full-stack AI engineer at LoglineAI. I build and own FilmOS, a film-production platform with 500 daily users, and the 14-agent pipeline behind LoglineOS.";
 
 export const metadata: Metadata = {
   title: TITLE,
@@ -44,12 +49,11 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      // Cinematic dark theme, locked site-wide.
-      className={`dark ${geistSans.variable} ${geistMono.variable} h-full antialiased`}
+      // Dusk-garden dark theme, locked site-wide: the sprite glows best on moss.
+      className={`dark ${geistSans.variable} ${geistMono.variable} ${outfit.variable} h-full antialiased`}
     >
-      <body className="flex min-h-full flex-col bg-zinc-950 text-zinc-100">
+      <body className="flex min-h-full flex-col bg-moss-950 text-moss-100">
         <TooltipProvider>{children}</TooltipProvider>
-        <Toaster theme="dark" />
         <div aria-hidden className="grain" />
         <Analytics />
       </body>

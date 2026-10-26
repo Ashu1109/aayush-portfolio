@@ -4,9 +4,9 @@ import { useEffect, useRef } from "react";
 import * as THREE from "three";
 
 /**
- * Full-page ink canvas: a ping-pong feedback simulation where the cursor
- * lays down ember ink that curls, drifts, and dissipates - over a barely-lit
- * painted nebula. Fixed behind all content; pauses when the tab is hidden.
+ * Full-page light canvas: a ping-pong feedback simulation where the cursor
+ * leaves a trail of firefly glow that curls, drifts, and dissipates - over a
+ * barely-lit mossy dusk. Fixed behind all content; pauses when the tab is hidden.
  */
 
 const VERTEX = /* glsl */ `
@@ -86,7 +86,7 @@ const SIM_FRAGMENT = /* glsl */ `
   }
 `;
 
-// Display pass: near-black canvas, faint painted nebula, ember ink ramp.
+// Display pass: moss-black canvas, faint foliage haze, firefly glow ramp.
 const DRAW_FRAGMENT = /* glsl */ `
   precision highp float;
   varying vec2 vUv;
@@ -98,23 +98,23 @@ const DRAW_FRAGMENT = /* glsl */ `
   void main() {
     float ink = texture2D(uInk, vUv).r;
 
-    // Ink smears the underlying paint slightly.
+    // Glow smears the underlying haze slightly.
     vec2 p = vec2(vUv.x * uAspect, vUv.y) * 2.4;
     p += ink * 0.28;
     float n = fbm(p + fbm(p + uTime * 0.015));
 
-    vec3 base = vec3(0.014, 0.013, 0.015);
-    vec3 petrol = vec3(0.035, 0.070, 0.085);
-    vec3 umber = vec3(0.11, 0.075, 0.05);
+    vec3 base = vec3(0.012, 0.022, 0.016);
+    vec3 fern = vec3(0.030, 0.090, 0.060);
+    vec3 olive = vec3(0.090, 0.110, 0.045);
 
     vec3 col = base;
-    col = mix(col, petrol, smoothstep(0.35, 0.75, n) * 0.10);
-    col = mix(col, umber, smoothstep(0.55, 0.95, n) * 0.14);
+    col = mix(col, fern, smoothstep(0.35, 0.75, n) * 0.12);
+    col = mix(col, olive, smoothstep(0.55, 0.95, n) * 0.14);
 
-    // Ember ink ramp: deep red core, molten mid, cream-hot peak.
+    // Firefly ramp: deep leaf edge, soft leaf mid, the sprite's cream glow at the peak.
     float t = clamp(ink, 0.0, 1.0);
-    vec3 inkCol = mix(vec3(0.30, 0.05, 0.01), vec3(1.0, 0.45, 0.10), smoothstep(0.05, 0.6, t));
-    inkCol = mix(inkCol, vec3(1.0, 0.85, 0.58), smoothstep(0.75, 1.1, ink));
+    vec3 inkCol = mix(vec3(0.06, 0.20, 0.08), vec3(0.55, 0.80, 0.36), smoothstep(0.05, 0.6, t));
+    inkCol = mix(inkCol, vec3(1.0, 0.95, 0.74), smoothstep(0.75, 1.1, ink));
     col += inkCol * (t * 0.85 + t * t * 0.5);
 
     // Vignette, darker toward the top so the nav always reads.

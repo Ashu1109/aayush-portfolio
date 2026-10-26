@@ -1,34 +1,48 @@
+"use client";
+
+import { KeyLight } from "@/components/key-light";
 import { Reveal } from "@/components/scroll/reveal";
 import { PROJECTS } from "@/lib/resume";
-import { ArrowUpRightIcon } from "lucide-react";
+import type { PointerEvent } from "react";
 
+// Spotlight follows the cursor inside a row; CSS vars, so no re-render.
+const trackSpotlight = (event: PointerEvent<HTMLElement>) => {
+  const rect = event.currentTarget.getBoundingClientRect();
+  event.currentTarget.style.setProperty("--x", `${event.clientX - rect.left}px`);
+  event.currentTarget.style.setProperty("--y", `${event.clientY - rect.top}px`);
+};
+
+/** Editorial index of shipped work: one oversized line per project. */
 export const Projects = () => (
-  <Reveal className="mx-auto max-w-[1600px] px-6 py-32 lg:px-12" id="projects">
+  <Reveal className="relative isolate px-6 py-32 lg:px-[4vw] lg:py-40" id="projects">
+    <KeyLight corner="tr" />
     <h2
-      className="text-4xl font-semibold tracking-tighter text-zinc-100 sm:text-5xl"
-      data-reveal
+      className="text-[clamp(2.5rem,5vw,5rem)] font-semibold leading-none tracking-tight text-moss-50"
+      data-split
     >
-      Built things
+      Things I shipped.
     </h2>
-    <div className="mt-16">
+    <div className="mt-16 lg:mt-24">
       {PROJECTS.map((project) => (
         <article
-          className="group grid gap-6 border-t border-zinc-800/70 py-12 transition-colors hover:bg-zinc-900/30 lg:grid-cols-[2fr_3fr] lg:gap-16"
+          className="group relative grid gap-6 border-t border-moss-800/80 py-10 lg:grid-cols-[1.15fr_1fr] lg:items-end lg:gap-16 lg:py-14"
           data-reveal
           key={project.name}
+          onPointerMove={trackSpotlight}
         >
-          <div className="flex items-start gap-3">
-            <h3 className="text-3xl font-semibold tracking-tight text-zinc-100 transition-transform duration-300 group-hover:translate-x-2">
-              {project.name}
-            </h3>
-            <ArrowUpRightIcon className="mt-1.5 size-6 text-amber-400 opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
-          </div>
+          <div
+            aria-hidden
+            className="pointer-events-none absolute inset-0 -z-10 bg-[radial-gradient(480px_circle_at_var(--x,50%)_var(--y,50%),oklch(0.8_0.12_130/0.09),transparent_70%)] opacity-0 transition-opacity duration-500 group-hover:opacity-100"
+          />
+          <h3 className="text-[clamp(2.25rem,5.5vw,5.5rem)] font-semibold leading-[0.95] tracking-tight text-moss-100 transition-[color,translate] duration-500 group-hover:translate-x-3 group-hover:text-leaf-400">
+            {project.name}
+          </h3>
           <div>
-            <p className="max-w-2xl text-lg leading-relaxed text-zinc-400">
+            <p className="max-w-[48ch] text-[16px] leading-relaxed text-moss-300">
               {project.description}
             </p>
-            <p className="mt-5 font-mono text-xs uppercase tracking-[0.2em] text-zinc-600">
-              {project.stack.join("  /  ")}
+            <p className="mt-5 font-mono text-[11px] uppercase tracking-[0.2em] text-moss-500">
+              {project.stack.join(" / ")}
             </p>
           </div>
         </article>

@@ -1,5 +1,6 @@
 "use client";
 
+import { LOADER_DONE } from "@/components/stage/loader";
 import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import Lenis from "lenis";
@@ -20,6 +21,13 @@ export const SmoothScroll = () => {
     const lenis = new Lenis({ autoRaf: false });
     lenis.on("scroll", ScrollTrigger.update);
 
+    // Hold still until the loader hands over the stage.
+    const release = () => lenis.start();
+    if (document.querySelector("[data-loader]")) {
+      lenis.stop();
+      window.addEventListener(LOADER_DONE, release, { once: true });
+    }
+
     const raf = (time: number) => {
       lenis.raf(time * 1000);
     };
@@ -27,6 +35,7 @@ export const SmoothScroll = () => {
     gsap.ticker.lagSmoothing(0);
 
     return () => {
+      window.removeEventListener(LOADER_DONE, release);
       gsap.ticker.remove(raf);
       lenis.destroy();
     };

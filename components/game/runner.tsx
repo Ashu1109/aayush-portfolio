@@ -1,11 +1,12 @@
 "use client";
 
+import { KeyLight } from "@/components/key-light";
 import { Reveal } from "@/components/scroll/reveal";
 import { useEffect, useRef, useState } from "react";
 
 /**
- * Ember Run: an original Mario-style endless runner drawn on a 2D canvas.
- * Jump the blocks, grab the embers, chase the best score. Pauses whenever
+ * Dew Run: an original Mario-style endless runner drawn on a 2D canvas.
+ * Jump the mossy stones, grab the dewdrops, chase the best score. Pauses whenever
  * the section leaves the viewport or the tab hides.
  */
 
@@ -28,6 +29,7 @@ const HEIGHT = 300;
 const PLAYER_X = 90;
 const GRAVITY = 2600;
 const JUMP_VELOCITY = -940;
+// Pre-rename key, kept so returning players keep their best score.
 const BEST_KEY = "ember-run-best";
 
 const freshWorld = (mode: Mode): World => ({
@@ -42,31 +44,28 @@ const freshWorld = (mode: Mode): World => ({
   time: 0,
 });
 
-/** Pixel pup, rects only: amber body, cream chest, perked ear, wagging tail. */
-const drawPup = (
+/** The leaf sprite, side view: trots with a little bob, stretches mid-jump. */
+const drawSprite = (
   ctx: CanvasRenderingContext2D,
+  sprite: HTMLImageElement,
   x: number,
   y: number,
   time: number,
-  running: boolean
+  running: boolean,
+  airborne: boolean
 ) => {
-  const phase = running ? Math.sin(time * 18) : 0;
-  ctx.fillStyle = "#78350f";
-  ctx.fillRect(x - 4, y - 20 + phase * 1.5, 6, 6); // tail
-  ctx.fillStyle = "#f59e0b";
-  ctx.fillRect(x, y - 24, 30, 16); // body
-  ctx.fillRect(x + 22, y - 36, 16, 14); // head
-  ctx.fillRect(x + 24, y - 42, 5, 7); // ear
-  ctx.fillRect(x + 33, y - 42, 5, 7); // ear
-  ctx.fillStyle = "#fef3c7";
-  ctx.fillRect(x, y - 10, 30, 4); // chest
-  ctx.fillRect(x + 34, y - 28, 6, 5); // snout
-  ctx.fillStyle = "#1c1917";
-  ctx.fillRect(x + 31, y - 33, 3, 3); // eye
-  ctx.fillStyle = "#d97706";
-  // Legs trot when running, plant when airborne.
-  ctx.fillRect(x + 3 + (running ? phase * 3 : 0), y - 8, 5, 8);
-  ctx.fillRect(x + 21 - (running ? phase * 3 : 0), y - 8, 5, 8);
+  if (!sprite.complete || !sprite.naturalWidth) {
+    return;
+  }
+  const w = 40;
+  const h = (w * sprite.naturalHeight) / sprite.naturalWidth;
+  const bob = running ? Math.abs(Math.sin(time * 14)) * 3 : 0;
+  const stretch = airborne ? 1.08 : 1;
+  ctx.save();
+  ctx.translate(x + w / 2, y - bob);
+  ctx.scale(1 / stretch, stretch);
+  ctx.drawImage(sprite, -w / 2, -h, w, h);
+  ctx.restore();
 };
 
 export const Runner = () => {
@@ -82,6 +81,8 @@ export const Runner = () => {
 
     const canvas = canvasRef.current;
     const ctx = canvas?.getContext("2d");
+    const sprite = new window.Image();
+    sprite.src = "/sprite/side.webp";
     if (!canvas || !ctx) {
       return;
     }
@@ -102,13 +103,19 @@ export const Runner = () => {
     resizeObserver.observe(canvas);
     resize();
 
+    // Canvas font strings can't resolve CSS variables, so read the next/font
+    // families off <html> once.
+    const rootStyle = getComputedStyle(document.documentElement);
+    const headingFont = `${rootStyle.getPropertyValue("--font-outfit")}, sans-serif`;
+    const monoFont = `${rootStyle.getPropertyValue("--font-geist-mono")}, monospace`;
+
     const overlay = (title: string, hint: string) => {
       ctx.textAlign = "center";
-      ctx.fillStyle = "#fafafa";
-      ctx.font = "600 26px var(--font-geist-sans), sans-serif";
+      ctx.fillStyle = "#f7f6e7";
+      ctx.font = `600 26px ${headingFont}`;
       ctx.fillText(title, width / 2, 128);
-      ctx.fillStyle = "#a1a1aa";
-      ctx.font = "12px var(--font-geist-mono), monospace";
+      ctx.fillStyle = "#9ea899";
+      ctx.font = `12px ${monoFont}`;
       ctx.fillText(hint, width / 2, 156);
     };
 
@@ -129,7 +136,7 @@ export const Runner = () => {
           player.vy = 0;
         }
 
-        // Spawn a block, sometimes with an ember arc floating past it.
+        // Spawn a stone, sometimes with a dewdrop floating past it.
         world.spawnIn -= dt;
         if (world.spawnIn <= 0) {
           world.spawnIn = 0.9 + Math.random() * 1.1 - world.speed / 2400;
@@ -158,7 +165,7 @@ export const Runner = () => {
         world.obstacles = world.obstacles.filter((o) => o.x + o.w > -20);
         world.coins = world.coins.filter((c) => c.x > -20 && !c.taken);
 
-        // Collisions: pup box vs blocks, pup center vs embers.
+        // Collisions: sprite box vs stones, sprite center vs dewdrops.
         const px = PLAYER_X;
         const py = player.y;
         for (const o of world.obstacles) {
@@ -187,59 +194,64 @@ export const Runner = () => {
       const world = worldRef.current;
       ctx.clearRect(0, 0, width, HEIGHT);
 
-      // Parallax embers drifting in the background.
-      ctx.fillStyle = "rgba(245, 158, 11, 0.12)";
+      // Parallax fireflies drifting in the background.
+      ctx.fillStyle = "rgba(219, 236, 193, 0.16)";
       for (let i = 0; i < 14; i++) {
         const x = (i * 173 - world.distance * (0.2 + (i % 3) * 0.12)) % (width + 40);
         ctx.fillRect((x + width + 40) % (width + 40) - 20, 40 + ((i * 67) % 170), 3, 3);
       }
 
       // Ground.
-      ctx.fillStyle = "#3f3f46";
+      ctx.fillStyle = "#404b42";
       ctx.fillRect(0, GROUND, width, 2);
-      ctx.fillStyle = "rgba(63, 63, 70, 0.4)";
+      ctx.fillStyle = "rgba(64, 75, 66, 0.4)";
       for (let i = 0; i < width / 34 + 2; i++) {
         const x = (i * 34 - (world.distance % 34)) | 0;
         ctx.fillRect(x, GROUND + 8, 14, 2);
       }
 
       for (const o of world.obstacles) {
-        ctx.fillStyle = "#3f3f46";
+        ctx.fillStyle = "#242e26";
         ctx.fillRect(o.x, GROUND - o.h, o.w, o.h);
-        ctx.strokeStyle = "#71717a";
+        ctx.strokeStyle = "#707b70";
         ctx.strokeRect(o.x + 0.5, GROUND - o.h + 0.5, o.w - 1, o.h - 1);
-        // Ember-hot cap so hazards read instantly against the dark.
-        ctx.fillStyle = "rgba(245, 158, 11, 0.7)";
-        ctx.fillRect(o.x, GROUND - o.h, o.w, 3);
+        // Moss cap so hazards read instantly against the dark.
+        ctx.fillStyle = "rgba(164, 205, 121, 0.8)";
+        ctx.fillRect(o.x, GROUND - o.h, o.w, 4);
       }
 
       for (const c of world.coins) {
         const pulse = 1 + Math.sin(world.time * 6 + c.x * 0.05) * 0.15;
-        ctx.fillStyle = "rgba(251, 191, 36, 0.25)";
+        ctx.fillStyle = "rgba(214, 238, 245, 0.18)";
         ctx.beginPath();
         ctx.arc(c.x, c.y, c.r * pulse * 2, 0, Math.PI * 2);
         ctx.fill();
-        ctx.fillStyle = "#fbbf24";
+        ctx.fillStyle = "rgba(226, 244, 248, 0.85)";
         ctx.beginPath();
         ctx.arc(c.x, c.y, c.r * pulse, 0, Math.PI * 2);
         ctx.fill();
+        // Glint, so it reads as a water drop rather than a coin.
+        ctx.fillStyle = "#ffffff";
+        ctx.fillRect(c.x - c.r * 0.45, c.y - c.r * 0.5, 2, 2);
       }
 
-      drawPup(
+      drawSprite(
         ctx,
+        sprite,
         PLAYER_X,
         world.player.y,
         world.time,
-        world.mode === "playing" && world.player.grounded
+        world.mode === "playing" && world.player.grounded,
+        !world.player.grounded
       );
 
       ctx.textAlign = "right";
-      ctx.fillStyle = "#fbbf24";
-      ctx.font = "600 18px var(--font-geist-mono), monospace";
+      ctx.fillStyle = "#a4cd79";
+      ctx.font = `600 18px ${monoFont}`;
       ctx.fillText(String(world.score).padStart(5, "0"), width - 20, 34);
 
       if (world.mode === "idle") {
-        overlay("Ember Run", "Space or tap to start. Jump the blocks, grab the embers.");
+        overlay("Dew Run", "Space or tap to start. Jump the stones, grab the dewdrops.");
       } else if (world.mode === "over") {
         overlay(`Run over at ${world.score}`, "Space or tap to go again.");
       } else if (world.mode === "paused") {
@@ -285,8 +297,8 @@ export const Runner = () => {
       if (!visible || (event.code !== "Space" && event.code !== "ArrowUp")) {
         return;
       }
-      // Ignore keys typed into the chat (or any editable element) — the game
-      // only owns Space/ArrowUp when the user isn't writing text.
+      // Ignore keys typed into any editable element: the game only owns
+      // Space/ArrowUp when the user isn't writing text.
       const target = event.target as HTMLElement | null;
       if (
         target &&
@@ -344,24 +356,25 @@ export const Runner = () => {
   }, []);
 
   return (
-    <Reveal className="mx-auto max-w-[1600px] px-6 py-32 lg:px-12" id="game">
+    <Reveal className="relative isolate px-6 py-32 lg:px-[4vw] lg:py-40" id="game">
+      <KeyLight corner="br" />
       <div className="flex flex-wrap items-end justify-between gap-4">
         <h2
-          className="text-4xl font-semibold tracking-tighter text-zinc-100 sm:text-5xl"
-          data-reveal
+          className="text-[clamp(2.5rem,5vw,5rem)] font-semibold leading-none tracking-tight text-moss-50"
+          data-split
         >
           Still here? Take a run.
         </h2>
-        <p className="font-mono text-xs uppercase tracking-[0.2em] text-zinc-500" data-reveal>
+        <p className="font-mono text-xs uppercase tracking-[0.2em] text-moss-500" data-reveal>
           Best {String(best).padStart(5, "0")}
         </p>
       </div>
       <div
-        className="mt-10 overflow-hidden rounded-2xl border border-zinc-800 bg-zinc-950/70 backdrop-blur-sm"
+        className="mt-10 overflow-hidden rounded-2xl border border-moss-800 bg-moss-950/70 backdrop-blur-sm"
         data-reveal
       >
         <canvas
-          aria-label="Ember Run: press space or tap to jump over blocks and collect embers"
+          aria-label="Dew Run: press space or tap to jump over stones and collect dewdrops"
           className="block h-[300px] w-full cursor-pointer touch-none"
           ref={canvasRef}
           role="img"

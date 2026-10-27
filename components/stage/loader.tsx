@@ -2,10 +2,11 @@
 
 import { useGSAP } from "@gsap/react";
 import { gsap } from "gsap";
+import { ScrollTrigger } from "gsap/ScrollTrigger";
 import Image from "next/image";
 import { useRef } from "react";
 
-gsap.registerPlugin(useGSAP);
+gsap.registerPlugin(useGSAP, ScrollTrigger);
 
 /** Fired on window once the loader hands the stage over; SmoothScroll listens. */
 export const LOADER_DONE = "loader:done";
@@ -33,6 +34,8 @@ export const Loader = ({ onDone }: { onDone: () => void }) => {
 
       const finish = () => {
         document.documentElement.style.overflow = "";
+        // Fonts and images have settled; re-measure every pin and trigger.
+        ScrollTrigger.refresh();
         window.dispatchEvent(new Event(LOADER_DONE));
         onDone();
       };

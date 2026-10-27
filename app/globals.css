@@ -145,6 +145,17 @@
   }
   html {
     @apply font-sans;
+    /* No native scrollbar: the progress rail shows position, and a scrollbar
+       that appears after the loader would change the width GSAP pinned at. */
+    scrollbar-width: none;
+  }
+  html::-webkit-scrollbar {
+    display: none;
+  }
+  /* Belt and braces against stray horizontal overflow; clip (unlike hidden)
+     doesn't turn body into a scroll container, so pins and sticky still work. */
+  body {
+    overflow-x: clip;
   }
   h1,
   h2,

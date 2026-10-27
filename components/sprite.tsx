@@ -2,8 +2,9 @@
 
 import { useGSAP } from "@gsap/react";
 import { createSpriteBrain } from "@/components/sprite-brain";
-import { SpriteFace } from "@/components/sprite-face";
-import { createWater, DewFilter, SpriteGlints, WaterLayer } from "@/components/sprite-water";
+import { FACES, type FaceFrame, SpriteFace } from "@/components/sprite-face";
+import { createRelief, RELIEF_DEPTH, type Relief } from "@/components/sprite-relief";
+import { createWater, DewFilter, WaterLayer } from "@/components/sprite-water";
 import { gsap } from "gsap";
 import { HeartIcon } from "lucide-react";
 import Image from "next/image";
@@ -13,15 +14,13 @@ gsap.registerPlugin(useGSAP);
 
 // Turnaround frames cut from the character sheet. Native facing: the side
 // frame looks right, the three-quarter frame looks slightly left. Front and
-// three-quarter use faceless art with a live SpriteFace on top. `show` and
-// `mask` are literal classes so Tailwind can see them; the mask reuses the
-// frame file so the sheen only lands on the sprite's body.
+// three-quarter use faceless art with a live SpriteFace on top. `show` is a
+// literal class so Tailwind can see it.
 const FRAMES = [
   {
     face: true,
     file: "front-faceless",
     height: 428,
-    mask: "group-data-[frame=front]/sprite:[mask-image:url(/sprite/front-faceless.webp)]",
     name: "front",
     show: "group-data-[frame=front]/sprite:opacity-100",
     width: 441,
@@ -30,7 +29,6 @@ const FRAMES = [
     face: true,
     file: "three-quarter-faceless",
     height: 420,
-    mask: "group-data-[frame=three-quarter]/sprite:[mask-image:url(/sprite/three-quarter-faceless.webp)]",
     name: "three-quarter",
     show: "group-data-[frame=three-quarter]/sprite:opacity-100",
     width: 426,
@@ -39,7 +37,6 @@ const FRAMES = [
     face: false,
     file: "side",
     height: 426,
-    mask: "group-data-[frame=side]/sprite:[mask-image:url(/sprite/side.webp)]",
     name: "side",
     show: "group-data-[frame=side]/sprite:opacity-100",
     width: 391,
@@ -48,7 +45,6 @@ const FRAMES = [
     face: false,
     file: "back",
     height: 424,
-    mask: "group-data-[frame=back]/sprite:[mask-image:url(/sprite/back.webp)]",
     name: "back",
     show: "group-data-[frame=back]/sprite:opacity-100",
     width: 430,
@@ -87,15 +83,18 @@ export type Turn = { angle: number };
 // How far (deg) the cursor can turn the sprite. Kept inside the
 // three-quarter arc so the animated face stays visible; the eyes do the rest.
 const LOOK_REACH = 55;
+const RAD = Math.PI / 180;
 
 /**
- * The leaf sprite as a turntable: 2D turnaround frames made to read as a 3D
- * object. A parent drives `turn.angle` (scroll); on top of that the cursor
- * adds a look-around (only while the turn is near 0), a perspective tilt, a
- * sheen that slides as the light angle changes, dewdrops on a nearer depth
- * plane, and a glow pool it bobs above. A live face and behaviour layer
- * (sprite-brain) make it blink, emote, and react to pokes. Static front view
- * under reduced motion.
+ * The leaf sprite as a turntable, rendered as real 3D: each frame's art is
+ * inflated into a relief mesh (sprite-relief) that turns with the cursor and
+ * the scroll, keeping the painted texture exactly as rendered while the
+ * turned-away side dims and the dew beads glint as the light moves. Frames
+ * swap at the segment edges to cover the full turn.
+ * The live face rides a CSS 3D plane matched to the mesh's camera and depth;
+ * a behaviour layer (sprite-brain) makes it blink, emote and react to pokes.
+ * Without WebGL it falls back to the flat frames; reduced motion gets a
+ * still, lit front view.
  */
 export const SpriteTurntable = ({ turn }: { turn: Turn }) => {
   const scope = useRef<HTMLDivElement>(null);
@@ -104,11 +103,68 @@ export const SpriteTurntable = ({ turn }: { turn: Turn }) => {
   useGSAP(
     () => {
       const host = scope.current;
-      const spin = host?.querySelector<HTMLElement>("[data-spin]");
-      const sheen = host?.querySelector<HTMLElement>("[data-sheen]");
-      if (!host || !spin || !sheen) {
+      const canvas = host?.querySelector<HTMLCanvasElement>("canvas[data-relief]");
+      const plane = host?.querySelector<HTMLElement>("[data-face-plane]");
+      const dew = host?.querySelector<HTMLElement>("[data-dew]");
+      if (!host || !canvas || !plane || !dew) {
         return;
       }
+
+      let relief: Relief | null = null;
+      try {
+        relief = createRelief(canvas, FRAMES);
+      } catch {
+        // No WebGL: the flat frames stay on screen.
+      }
+
+      // The relief camera is orthographic, so the face plane needs no CSS
+      // perspective: rotate + translateZ alone project it the same way.
+      let stageHeight = host.clientHeight;
+      const fit = () => {
+        stageHeight = host.clientHeight;
+        relief?.resize(host.clientWidth, stageHeight);
+      };
+      const resizeObserver = new ResizeObserver(fit);
+      resizeObserver.observe(host);
+      fit();
+
+      const pose = { lightX: 0, lightY: 0, pitch: 0, yaw: 0 };
+      let faceHeight = 0;
+
+      const showFrame = (frame: string, flip: boolean) => {
+        relief?.setFrame(frame, flip);
+        const face = FACES[frame as FaceFrame];
+        faceHeight =
+          face && relief
+            ? relief.heightAt(frame, (face.eyes[0].cx + face.eyes[1].cx) / 2, (face.eyes[0].cy + face.mouth.cy) / 2)
+            : 0;
+      };
+
+      const draw = () => {
+        if (!relief || host.dataset.gl !== "on") {
+          return;
+        }
+        relief.setPose(pose.yaw, pose.pitch);
+        relief.setLight(pose.lightX, pose.lightY);
+        relief.render();
+        const depth = (faceHeight * RELIEF_DEPTH * stageHeight) / 2;
+        plane.style.transform = `rotateX(${-pose.pitch}rad) rotateY(${pose.yaw}rad) translateZ(${depth}px)`;
+      };
+
+      let disposed = false;
+      relief?.ready
+        .then(() => {
+          if (disposed) {
+            return;
+          }
+          showFrame(host.dataset.frame ?? "front", host.dataset.flip === "true");
+          host.dataset.gl = "on";
+          draw();
+        })
+        .catch(() => {
+          // Textures failed: keep the flat frames.
+        });
+
       const mm = gsap.matchMedia();
       mm.add("(prefers-reduced-motion: no-preference)", () => {
         const float = { duration: 2.4, ease: "sine.inOut", repeat: -1, yoyo: true };
@@ -121,13 +177,13 @@ export const SpriteTurntable = ({ turn }: { turn: Turn }) => {
           y: -16,
         });
         gsap.to("[data-pool]", { ...float, opacity: 0.45, scale: 0.78 });
-        gsap.set("[data-dew]", { z: 90 });
-        gsap.to("[data-dew]", { ...float, duration: 3.1, y: -12 });
+        gsap.to(dew, { ...float, duration: 3.1, y: -12 });
 
         const look = { x: 0, y: 0 };
         const lookX = gsap.quickTo(look, "x", { duration: 0.8, ease: "power3.out" });
         const lookY = gsap.quickTo(look, "y", { duration: 0.8, ease: "power3.out" });
         const lean = gsap.quickTo("[data-tilt]", "x", { duration: 0.8, ease: "power3.out" });
+        const setDewX = gsap.quickSetter(dew, "x", "px");
 
         const onPointerMove = (event: PointerEvent) => {
           const rect = host.getBoundingClientRect();
@@ -138,35 +194,44 @@ export const SpriteTurntable = ({ turn }: { turn: Turn }) => {
           lean(gsap.utils.clamp(-1, 1, x) * 12);
         };
 
-        const setSpinY = gsap.quickSetter(spin, "rotationY", "deg");
-        const setSpinX = gsap.quickSetter(spin, "rotationX", "deg");
-        const setSheenX = gsap.quickSetter(sheen, "xPercent");
-        const setSheenY = gsap.quickSetter(sheen, "yPercent");
-        let shown = "front:false";
+        // Only spend GPU time while the sprite is on screen.
+        let onScreen = true;
+        const visibility = new IntersectionObserver(([entry]) => {
+          onScreen = entry.isIntersecting;
+        });
+        visibility.observe(host);
 
-        const render = () => {
+        let shown = "";
+        const render = (time: number) => {
           // The cursor look fades out once the scroll-driven turn takes over.
           const weight = 1 - gsap.utils.clamp(0, 1, Math.abs(turn.angle) / 45);
           const { flip, frame, twist } = frameForAngle(turn.angle + look.x * LOOK_REACH * weight);
           const key = `${frame}:${flip}`;
           if (key !== shown) {
+            if (shown) {
+              // Squeeze through the swap so the frame change reads as a turn.
+              gsap.fromTo(
+                "[data-turn]",
+                { scaleX: 0.86 },
+                { duration: 0.45, ease: "back.out(2.5)", overwrite: true, scaleX: 1 }
+              );
+            }
             shown = key;
             host.dataset.frame = frame;
             host.dataset.flip = String(flip);
-            // Squeeze through the swap so the frame change reads as a turn.
-            gsap.fromTo(
-              "[data-turn]",
-              { scaleX: 0.86 },
-              { duration: 0.45, ease: "back.out(2.5)", overwrite: true, scaleX: 1 }
-            );
+            showFrame(frame, flip);
           }
-          // Positive rotationY swings the face toward the viewer's right.
-          setSpinY(twist);
-          setSpinX(-look.y * 10);
-          // Fixed light, turning body: the highlight slides the other way.
-          // The sheen sits inside the mirrored layer, so undo the mirror.
-          setSheenX(-twist * 3 * (flip ? -1 : 1));
-          setSheenY(look.y * 30);
+          // A slow idle sway keeps the volume reading even when nothing moves.
+          pose.yaw = (twist * 1.25 + Math.sin(time * 0.7) * 2.5) * RAD;
+          pose.pitch = look.y * 10 * RAD;
+          pose.lightX = look.x;
+          pose.lightY = look.y;
+          host.dataset.yaw = pose.yaw.toFixed(4);
+          // The dew sits in front of the body, so it swings wider as it turns.
+          setDewX(Math.sin(pose.yaw) * stageHeight * 0.18);
+          if (onScreen) {
+            draw();
+          }
         };
 
         gsap.ticker.add(render);
@@ -180,10 +245,17 @@ export const SpriteTurntable = ({ turn }: { turn: Turn }) => {
         return () => {
           stopBrain();
           stopWater();
+          visibility.disconnect();
           gsap.ticker.remove(render);
           window.removeEventListener("pointermove", onPointerMove);
         };
       });
+
+      return () => {
+        disposed = true;
+        resizeObserver.disconnect();
+        relief?.dispose();
+      };
     },
     { scope }
   );
@@ -193,6 +265,7 @@ export const SpriteTurntable = ({ turn }: { turn: Turn }) => {
       className="group/sprite relative mx-auto aspect-[441/428] w-full"
       data-flip="false"
       data-frame="front"
+      data-gl="off"
       ref={scope}
     >
       {/* Lantern glow behind, and the light pool it casts on the ground. */}
@@ -201,13 +274,12 @@ export const SpriteTurntable = ({ turn }: { turn: Turn }) => {
         className="absolute -bottom-[7%] left-[12%] h-[16%] w-[76%] rounded-full bg-[radial-gradient(closest-side,oklch(0.94_0.07_105/0.3),transparent)]"
         data-pool
       />
-      {/* Perspective sits on the 3D layers' direct parent so it isn't flattened. */}
-      <div className="absolute inset-0 [perspective:900px]" data-bob>
-        <div className="absolute inset-0 [transform-style:preserve-3d]" data-tilt>
-          <div className="absolute inset-0 [transform-style:preserve-3d]" data-spin>
-            <div className="absolute inset-0" data-gesture style={{ transformOrigin: "50% 100%" }}>
+      <div className="absolute inset-0" data-bob>
+        <div className="absolute inset-0" data-tilt>
+          <div className="absolute inset-0" data-gesture style={{ transformOrigin: "50% 100%" }}>
             <div className="absolute inset-0" data-turn style={{ transformOrigin: "50% 100%" }}>
-              <div className="absolute inset-0 group-data-[flip=true]/sprite:-scale-x-100">
+              {/* Flat frames: on screen until the relief is ready, and the no-WebGL fallback. */}
+              <div className="absolute inset-0 group-data-[flip=true]/sprite:-scale-x-100 group-data-[gl=on]/sprite:invisible">
                 {FRAMES.map((frame) => (
                   <Image
                     alt=""
@@ -220,42 +292,38 @@ export const SpriteTurntable = ({ turn }: { turn: Turn }) => {
                     width={frame.width}
                   />
                 ))}
-                {FRAMES.filter((frame) => frame.face).map((frame) => (
-                  <SpriteFace
-                    className={`absolute inset-0 h-full w-full opacity-0 ${frame.show}`}
-                    frame={frame.name as "front" | "three-quarter"}
-                    key={frame.name}
-                  />
-                ))}
-                {FRAMES.filter((frame) => frame.face).map((frame) => (
-                  <SpriteGlints
-                    className={`pointer-events-none absolute inset-0 h-full w-full opacity-0 ${frame.show}`}
-                    frame={frame.name as "front" | "three-quarter"}
-                    key={`glints-${frame.name}`}
-                  />
-                ))}
-                <div
-                  className={`absolute inset-0 overflow-hidden mix-blend-screen [mask-position:center] [mask-repeat:no-repeat] [mask-size:contain] ${FRAMES.map((frame) => frame.mask).join(" ")}`}
-                >
-                  <div
-                    className="absolute left-[8%] top-[4%] h-[60%] w-[60%] rounded-full bg-[radial-gradient(closest-side,oklch(1_0.02_105/0.42),transparent)]"
-                    data-sheen
-                  />
+              </div>
+              <canvas
+                aria-hidden
+                className="absolute inset-0 h-full w-full group-data-[gl=off]/sprite:invisible"
+                data-relief
+              />
+              {/* The face rides a CSS plane projected exactly like the relief mesh. */}
+              <div className="pointer-events-none absolute inset-0">
+                <div className="absolute inset-0" data-face-plane>
+                  <div className="absolute inset-0 group-data-[flip=true]/sprite:-scale-x-100">
+                    {FRAMES.filter((frame) => frame.face).map((frame) => (
+                      <SpriteFace
+                        className={`absolute inset-0 h-full w-full opacity-0 ${frame.show}`}
+                        frame={frame.name as FaceFrame}
+                        key={frame.name}
+                      />
+                    ))}
+                  </div>
                 </div>
               </div>
             </div>
-            </div>
-            <Image
-              alt=""
-              className="absolute -bottom-[4%] -left-[14%] w-[26%]"
-              data-dew
-              height={242}
-              src="/sprite/dew.webp"
-              style={{ filter: `url(#${dewFilter})` }}
-              unoptimized
-              width={333}
-            />
           </div>
+          <Image
+            alt=""
+            className="absolute -bottom-[4%] -left-[14%] w-[26%]"
+            data-dew
+            height={242}
+            src="/sprite/dew.webp"
+            style={{ filter: `url(#${dewFilter})` }}
+            unoptimized
+            width={333}
+          />
         </div>
       </div>
 

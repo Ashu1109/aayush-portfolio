@@ -1,58 +1,31 @@
 import { SPRITE_HOP } from "@/components/sprite-brain";
 import { gsap } from "gsap";
 import Image from "next/image";
-import { useId } from "react";
 
 type Point = readonly [number, number];
 
 /**
  * Water on each turnaround frame, in that frame's own pixels: the outer leaf
  * tips where drops gather and fall (clear of the body, so they never read as
- * tears), and the dew beads on the cap that catch light.
+ * tears), and the dew beads on the cap that a hop shakes loose. Bead
+ * sparkles themselves are lit in the relief shader (sprite-relief).
  */
 export const WATER = {
   front: {
-    glints: [[235, 70], [162, 82], [332, 105], [410, 145], [88, 70], [360, 78], [200, 150], [280, 125], [65, 130], [235, 25]],
+    beads: [[235, 70], [162, 82], [332, 105], [410, 145], [88, 70], [360, 78], [200, 150], [280, 125], [65, 130], [235, 25]],
     height: 428,
     tips: [[20, 205], [426, 203]],
     width: 441,
   },
   "three-quarter": {
-    glints: [[190, 65], [232, 80], [110, 108], [305, 92], [355, 120], [390, 108], [158, 140], [270, 20], [65, 125], [335, 35]],
+    beads: [[190, 65], [232, 80], [110, 108], [305, 92], [355, 120], [390, 108], [158, 140], [270, 20], [65, 125], [335, 35]],
     height: 420,
     tips: [[13, 202], [412, 196]],
     width: 426,
   },
-} satisfies Record<string, { glints: Point[]; height: number; tips: Point[]; width: number }>;
+} satisfies Record<string, { beads: Point[]; height: number; tips: Point[]; width: number }>;
 
 export type WaterFrame = keyof typeof WATER;
-
-/** Specular glints over the cap's dew beads; they twinkle and drift with the light. */
-export const SpriteGlints = ({ className, frame }: { className?: string; frame: WaterFrame }) => {
-  const geo = WATER[frame];
-  const glow = `glint-${useId().replace(/:/g, "")}`;
-  return (
-    <svg
-      aria-hidden
-      className={className}
-      preserveAspectRatio="xMidYMid meet"
-      viewBox={`0 0 ${geo.width} ${geo.height}`}
-    >
-      <defs>
-        <radialGradient id={glow}>
-          <stop offset="0" stopColor="#fff" />
-          <stop offset="0.3" stopColor="#fff" stopOpacity="0.75" />
-          <stop offset="1" stopColor="#fff" stopOpacity="0" />
-        </radialGradient>
-      </defs>
-      <g data-glints>
-        {geo.glints.map(([x, y]) => (
-          <circle cx={x} cy={y} data-glint-dot fill={`url(#${glow})`} key={`${x}-${y}`} opacity="0" r="7" />
-        ))}
-      </g>
-    </svg>
-  );
-};
 
 /** Host-level layer for the falling drop, splash beads and ground ripples. */
 export const WaterLayer = () => (
@@ -111,12 +84,12 @@ const GRAVITY = 2200;
 /**
  * Makes the water behave: drops swell at a leaf tip, sag, fall with gravity
  * and splash (flattening, flicking beads, rippling the ground glow); hops
- * shake water off the cap; glints twinkle and slide as the light angle
- * changes; the dew cluster wobbles and jiggles on landing.
+ * shake water off the cap; the dew cluster wobbles and jiggles on landing.
  *
- * Expects the WaterLayer, SpriteGlints and a filtered `[data-dew]` under
- * `host`, plus the turntable's `[data-bob]` and `[data-tilt]`. Create inside
- * a GSAP context; call the returned cleanup to drop the DOM listeners.
+ * Expects the WaterLayer and a filtered `[data-dew]` under `host`, plus the
+ * turntable's `[data-bob]`, `[data-tilt]` and its current yaw in
+ * `data-yaw`. Create inside a GSAP context; call the returned cleanup to
+ * drop the DOM listeners.
  */
 export const createWater = (host: HTMLElement, canDrip: () => boolean) => {
   const drop = host.querySelector<HTMLElement>("[data-drop]");
@@ -133,15 +106,19 @@ export const createWater = (host: HTMLElement, canDrip: () => boolean) => {
   const frame = (): WaterFrame =>
     host.dataset.frame === "three-quarter" ? "three-quarter" : "front";
 
-  /** Frame pixel to host pixel, following the bob, lean and mirror. */
+  /** Frame pixel to host pixel, following the bob, lean, mirror and turn. */
   const toHost = ([x, y]: Point) => {
     const geo = WATER[frame()];
     const scale = Math.min(host.clientWidth / geo.width, host.clientHeight / geo.height);
     const offsetX = (host.clientWidth - geo.width * scale) / 2;
     const offsetY = (host.clientHeight - geo.height * scale) / 2;
     const fx = host.dataset.flip === "true" ? geo.width - x : x;
+    // Tips sit on the silhouette edge (no depth), so turning just
+    // foreshortens them toward the middle.
+    const middle = host.clientWidth / 2;
+    const turned = middle + (offsetX + fx * scale - middle) * Math.cos(Number(host.dataset.yaw ?? 0));
     return {
-      x: offsetX + fx * scale + Number(gsap.getProperty(tilt, "x")),
+      x: turned + Number(gsap.getProperty(tilt, "x")),
       y: offsetY + y * scale + Number(gsap.getProperty(bob, "y")),
     };
   };
@@ -220,9 +197,9 @@ export const createWater = (host: HTMLElement, canDrip: () => boolean) => {
     if (forming?.isActive()) {
       release();
     }
-    const glints = WATER[frame()].glints;
+    const caps = WATER[frame()].beads;
     beads.forEach((bead) => {
-      const from = toHost(gsap.utils.random(glints as Point[]));
+      const from = toHost(gsap.utils.random(caps as Point[]));
       flick(bead, from.x, from.y, 130, gsap.utils.random(40, 110));
     });
     if (dew) {
@@ -232,27 +209,6 @@ export const createWater = (host: HTMLElement, canDrip: () => boolean) => {
         { delay: 0.5, duration: 1, ease: "elastic.out(1, 0.3)", scaleX: 1, scaleY: 1 }
       );
     }
-  };
-
-  // Glints: each bead flares now and then, and the whole set slides against
-  // the cursor because a fixed light reflects off a moving viewpoint.
-  gsap.utils.toArray<SVGCircleElement>("[data-glint-dot]", host).forEach((dot) => {
-    gsap.set(dot, { svgOrigin: `${dot.getAttribute("cx")} ${dot.getAttribute("cy")}` });
-    gsap.to(dot, {
-      delay: gsap.utils.random(0, 4),
-      duration: gsap.utils.random(0.5, 1.1),
-      ease: "sine.inOut",
-      keyframes: { opacity: [0, 0.95, 0], scale: [0.4, 1.15, 0.4] },
-      repeat: -1,
-      repeatDelay: gsap.utils.random(1.5, 5),
-    });
-  });
-  const glintGroups = gsap.utils.toArray<SVGGElement>("[data-glints]", host);
-  const glintX = gsap.quickTo(glintGroups, "x", { duration: 0.6, ease: "power3.out" });
-  const glintY = gsap.quickTo(glintGroups, "y", { duration: 0.6, ease: "power3.out" });
-  const onPointerMove = (event: PointerEvent) => {
-    glintX(-((event.clientX / window.innerWidth) * 2 - 1) * 5);
-    glintY(-((event.clientY / window.innerHeight) * 2 - 1) * 4);
   };
 
   // The dew cluster's refraction drifts slowly, like liquid that never settles.
@@ -267,9 +223,5 @@ export const createWater = (host: HTMLElement, canDrip: () => boolean) => {
   }
 
   host.addEventListener(SPRITE_HOP, onHop);
-  window.addEventListener("pointermove", onPointerMove, { passive: true });
-  return () => {
-    host.removeEventListener(SPRITE_HOP, onHop);
-    window.removeEventListener("pointermove", onPointerMove);
-  };
+  return () => host.removeEventListener(SPRITE_HOP, onHop);
 };
